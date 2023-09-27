@@ -366,59 +366,6 @@ BOOL HandleOffsetExpression(char* cpPath, size_t start, size_t end, char* varVal
 	return SUCCESS;
 }
 
-/*
-BOOL HandleOffsetExpression(char* cpPath, size_t start, size_t end, char* varVal) {
-	size_t varlen = 0;
-	long long int offset = 0;
-	long long int NumOfChars = 0;
-	BOOL bOneVal = FALSE;
-	SEC_LEN(varVal, MAX_PATH_SIZE, varlen);
-	char cpOffset[MAX_BASE_10_LEN+1] = { 0 }; // if number is more than seven digits itsinvalid as max len can be 32000 (plus negative value)
-	char cpNumOfChars[MAX_BASE_10_LEN+1] = { 0 }; 
-	size_t commaIdx = find_char(cpPath + start, ',', end - start);
-	if (commaIdx == (end-start))
-	{
-		bOneVal = TRUE;
-	}
-	if ((commaIdx >= MAX_BASE_10_LEN)) {
-		memset(varVal, 0, MAX_PATH_SIZE);
-		return SUCCESS;
-	}
-	else
-	{
-		MEMCPY_S(cpOffset, MAX_BASE_10_LEN+1, cpPath + start, commaIdx);
-		offset = atoi(cpOffset);
-	}
-
-	if (offset >= varlen || -offset >= varlen) {
-		memset(varVal, 0, MAX_PATH_SIZE);
-		return SUCCESS;
-	}
-
-	if (bOneVal == FALSE) {
-		if ((end - start - commaIdx >= MAX_BASE_10_LEN)) {
-			NumOfChars = -1;
-		}
-		else
-		{
-			MEMCPY_S(cpNumOfChars, MAX_BASE_10_LEN + 1, cpPath + start + commaIdx + 1, end - start - commaIdx);
-			NumOfChars = atoi(cpNumOfChars);
-		}
-	}
-
-	if()
-
-
-
-	char temp[MAX_PATH_SIZE] = { 0 };
-	MEMCPY_S(temp, MAX_PATH_SIZE, varVal + offset, NumOfChars == -1 ? varlen - offset : NumOfChars);
-	IS_NULL_TERMINATED(temp, MAX_PATH_SIZE);
-	memset(varVal, 0, MAX_PATH_SIZE);
-	MEMCPY_S(varVal, MAX_PATH_SIZE, temp, MAX_PATH_SIZE);
-
-	return SUCCESS;
-}
-*/
 
 size_t find_char(char* str, char val, size_t max_size) {
 	for (size_t i = 0; i < max_size && str[i] != '\0'; i++) {
