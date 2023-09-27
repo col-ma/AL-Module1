@@ -11,7 +11,11 @@
 static const char* EVIL = "C:\\evilevilevil\\";
 
 
+/*
+NEED TO DEAL WITH THE RUNTIME WHEN THE PROGRAM ISNT RUNNING =
 
+
+*/
 int main() {
 
 
@@ -392,7 +396,9 @@ DWORD CreateAllSubDirs(char* cpPath) {
 			}
 
 		}
-		if (IsEvilRequest(cpPath)) {
+		char copy[MAX_PATH_SIZE] = { 0 };
+		MEMCPY_S(copy, MAX_PATH_SIZE, cpPath, MAX_PATH_SIZE);
+		if (IsEvilRequest(copy)) {
 			printf_s("evil request\n");
 			return FAILURE;
 		}
@@ -408,14 +414,17 @@ DWORD CreateAllSubDirs(char* cpPath) {
 */
 DWORD BuildDirs(char* cpWorkingPath, char* cpFullPath) {
 	cpWorkingPath[strlen(cpWorkingPath)] = '\\';
+	cpWorkingPath[strlen(cpWorkingPath)+1] = '\0';
 	while (strcmp(cpWorkingPath, cpFullPath) != 0 && (strlen(cpFullPath) > strlen(cpWorkingPath)))
 	{
 		AddBlock(cpWorkingPath, cpFullPath);
 		if (CreateDirectoryA(cpWorkingPath, NULL) == 0) {
-			printf("error encountered while creating dir\n");
+			printf("error encountered while creating dir %d\n", GetLastError());
 			return FAILURE;
 		}
-		if (IsEvilRequest(cpWorkingPath)) {
+		char copy[MAX_PATH_SIZE] = { 0 };
+		MEMCPY_S(copy, MAX_PATH_SIZE, cpWorkingPath, MAX_PATH_SIZE);
+		if (IsEvilRequest(copy)) {
 			printf_s("blocked attempt o crate evilevilevil dir\n");
 			return FAILURE;
 		}
