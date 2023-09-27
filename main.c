@@ -11,11 +11,7 @@
 static const char* EVIL = "C:\\evilevilevil\\";
 
 
-/*
-NEED TO DEAL WITH THE RUNTIME WHEN THE PROGRAM ISNT RUNNING =
 
-
-*/
 int main() {
 
 
