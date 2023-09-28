@@ -84,3 +84,15 @@ int runCommand();
 BOOL ResolveWildCard(char* cpPath, size_t idx, int* offset, size_t path_len);
 
 BOOL FindAndResolveWildCards(char* path);
+
+BOOL substrUpTo(char* org, char* what, char* with);
+
+BOOL RunCmd(char* exp, char* output);
+
+BOOL IsEscapable(char a);
+
+BOOL escapeEscapables(char* cmd, size_t sz);
+
+BOOL addEscape(char* cmd, int i, size_t sz);
+
+BOOL getFromCMD(char* cpPath, size_t start, size_t end, int* piOffset, size_t i, char* output);
