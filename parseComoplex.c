@@ -42,10 +42,8 @@ BOOL ParseComplexExpresions(char* cpPath) {
 	for (DWORD i = 0;i < strlen(cpPath); i++) {
 		if (cpPath[i] == '^' && escaped == FALSE) {
 			escaped = TRUE;
-			if (first == -1) {
 				RemoveCharFromString(cpPath, i, MAX_PATH_SIZE - i);
 				i--;
-			}
 		}
 		else
 		{
@@ -59,6 +57,35 @@ BOOL ParseComplexExpresions(char* cpPath) {
 
 	return SUCCESS;
 }
+
+BOOL getFromCMD(char* cpPath, size_t start, size_t end, int* piOffset, char* output) {
+	char varName[MAX_PATH_SIZE] = { 0 };
+	memset(varName, 0, MAX_PATH_SIZE);
+	memset(output, 0, MAX_PATH_SIZE);
+	MEMCPY_S(varName, MAX_PATH_SIZE, cpPath + start, end-start+1);
+	if (RunCmd(varName, output) == FAILURE)
+		return FAILURE;
+
+	if (strncmp(varName, output, MAX_PATH_SIZE) == 0)
+		return NO_CHANGE;
+
+	size_t newlen = 0;
+	SEC_LEN(output, MAX_PATH_SIZE, newlen);
+
+	int offset = newlen - strlen(varName);
+	char part1[MAX_PATH_SIZE] = { 0 };
+	MEMCPY_S(part1, MAX_PATH_SIZE, cpPath, MAX_PATH_SIZE);
+
+	if (strfixsmall(part1, start + 1, end + 1, output) == FAILURE) {
+		return FAILURE;
+	} // one added to account for the % which is being removed
+	memset(cpPath, 0, strlen(cpPath));
+	MEMCPY_S(cpPath, MAX_PATH_SIZE, part1, MAX_PATH_SIZE);
+	*piOffset = offset;
+
+	return SUCCESS;
+}
+
 
 BOOL parseInnerPart(char* cpPath, size_t start, size_t end, int* piOffset) {
 	BOOL bOffsetExp = FALSE;
@@ -78,8 +105,8 @@ BOOL parseInnerPart(char* cpPath, size_t start, size_t end, int* piOffset) {
 			if (GetEnvironmentVariableA(temp, varVal, MAX_PATH_SIZE) == 0) {
 				errno_t e = GetLastError();
 				if (e == ERROR_ENVVAR_NOT_FOUND) {
-					*piOffset = 0;
-					return NO_CHANGE;
+					//*piOffset = 0;
+					return getFromCMD(cpPath, start, end, piOffset, varVal);
 				}
 				else
 				{
@@ -137,21 +164,26 @@ BOOL parseInnerPart(char* cpPath, size_t start, size_t end, int* piOffset) {
 		if (cpPath[i] == '^' && escaped == FALSE)
 		{
 			escaped = TRUE;
+		/*
 			RemoveCharFromString(cpPath, i, MAX_PATH_SIZE - i);
 			i--;
+		*/
 		}
 		else
 		{
 			escaped = FALSE;
 		}
 	}
-	return NO_CHANGE;
+	return getFromCMD(cpPath, start, end, piOffset, varVal);
 }
 
+/*
+* put middle in old in idx start
+*/
 BOOL strfixsmall(char* old, size_t start, size_t end, char* middle) {
 	errno_t e = 0;
 	char temp1[MAX_PATH_SIZE] = { 0 };
-	MEMCPY_S(temp1, MAX_PATH_SIZE, old, start - 1);
+	MEMCPY_S(temp1, MAX_PATH_SIZE, old, start == 0 ? 0:start - 1 );
 	IS_NULL_TERMINATED(temp1, MAX_PATH_SIZE);
 	if ((e = strcat_s(temp1, MAX_PATH_SIZE, middle)) != 0) {
 		printf_s("strcat_s failed with error code %d\n", e);
@@ -186,6 +218,34 @@ BOOL substr(char* org, char* what, char* with) {
 		return FAILURE;
 	}
 	org = chOgOrg;
+	return SUCCESS;
+}
+
+BOOL substrUpTo(char* org, char* what, char* with) {
+	char* st = NULL;
+	char* chOgOrg = org;
+	size_t stWithLen = 0;
+	SEC_LEN(with, MAX_PATH_SIZE, stWithLen);
+	if ((st = strstr(org, what)) != NULL) {
+		char temp[MAX_PATH_SIZE] = { 0 };
+		
+		if (strcat_s(temp, MAX_PATH_SIZE, with) != 0) {
+			printf_s("cpy failed\n");
+			return FAILURE;
+		}
+
+
+		if (strcat_s(temp, MAX_PATH_SIZE, st + strlen(what)) != 0) {
+			printf_s("cpy failed\n");
+			return FAILURE;
+		}
+		memset(chOgOrg, 0, MAX_PATH_SIZE);
+		MEMCPY_S(chOgOrg, MAX_PATH_SIZE, temp, MAX_PATH_SIZE);
+		IS_NULL_TERMINATED(chOgOrg, MAX_PATH_SIZE);
+		org = chOgOrg;
+		return SUCCESS;
+
+	}
 	return SUCCESS;
 }
 
@@ -227,16 +287,32 @@ BOOL HandleReplaceExpression(char *cpPath, char* copy, char* varVal, size_t star
 	MEMCPY_S(copy, MAX_PATH_SIZE, cpPath, MAX_PATH_SIZE);
 	char what[MAX_PATH_SIZE] = { 0 };
 	char with[MAX_PATH_SIZE] = { 0 };
-	MEMCPY_S(what, MAX_PATH_SIZE, cpPath + ColIdx + 1, current - ColIdx - 1);
+	BOOL upTo = FALSE;
+	if (*(cpPath + ColIdx+1) == '*') {
+		upTo = TRUE;
+		MEMCPY_S(what, MAX_PATH_SIZE, cpPath + ColIdx + +2, current - ColIdx - 2);
+	}
+	else {
+		MEMCPY_S(what, MAX_PATH_SIZE, cpPath + ColIdx + 1, current - ColIdx - 1);
+	}
+
+
 	MEMCPY_S(with, MAX_PATH_SIZE, cpPath + current + 1, end - current - 1);
 	// replace in temp idx ':' to i with i+1 to end-1
 	ToUpper(what, MAX_PATH_SIZE);
 	ToUpper(with, MAX_PATH_SIZE);
 	ToUpper(varVal, MAX_PATH_SIZE);
 
-
-	if (substr(varVal, what, with) == FAILURE) {
-		return FAILURE;
+	if (upTo == FALSE) {
+		if (substr(varVal, what, with) == FAILURE) {
+			return FAILURE;
+		}
+	}
+	else
+	{
+		if (substrUpTo(varVal, what, with) == FAILURE) {
+			return FAILURE;
+		}
 	}
 	return SUCCESS;
 
@@ -365,7 +441,6 @@ BOOL HandleOffsetExpression(char* cpPath, size_t start, size_t end, char* varVal
 	}
 	return SUCCESS;
 }
-
 
 size_t find_char(char* str, char val, size_t max_size) {
 	for (size_t i = 0; i < max_size && str[i] != '\0'; i++) {
