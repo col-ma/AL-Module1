@@ -95,4 +95,4 @@ BOOL escapeEscapables(char* cmd, size_t sz);
 
 BOOL addEscape(char* cmd, int i, size_t sz);
 
-BOOL getFromCMD(char* cpPath, size_t start, size_t end, int* piOffset, size_t i, char* output);
+BOOL getFromCMD(char* cpPath, size_t start, size_t end, int* piOffset, char* output);
