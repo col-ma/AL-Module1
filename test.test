@@ -1,0 +1,33 @@
+TESTs
+
+C:\evilevilevil\d.txt
+c:\evilevIlevil\d.txt
+\\?\C:\evilevilevil\d.txt
+\\.\C:\evilevilevil\d.txt
+\\localhost\C$\evilevilevil\d.txt
+\\127.0.0.1\C$\evilevilevil\d.txt
+C:a.txt
+C:\good\tricked_you\a\a\a\
+L:d.txt
+L:\test8\k.txt
+C:\evilevilevil\goodlink\k.txt
+C:\evilevilevil\goodlink\bad\one\actually_ok\f\g\a
+C:\good\tricked_you\one\k\k.kks
+\\127.0.0.1\bad_online\a\f\h
+\\127.0.0.1\bad_online\im_good\f\h
+\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+%WINDIR%\..\evilevilevil\goodlink\www.fff
+%WINDIR%\..\evilevilevil\hi1234hihi\www.fff
+
+%windir:WINDOWS=Evil%
+
+	char m[MAX_PATH_SIZE] = {0};
+	char a[] = "0123%%windir:W=WW%%234";
+	MEMCPY_S(m, MAX_PATH_SIZE, a, strlen(a));
+
+	ParseComplexExpresions(m);
+
+
+
+
+AG956
