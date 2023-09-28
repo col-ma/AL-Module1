@@ -17,9 +17,7 @@ NEED TO DEAL WITH THE RUNTIME WHEN THE PROGRAM ISNT RUNNING =
 
 */
 int main() {
-
-
-
+	
 	while (1)
 	{
 		printf_s("===============================STARTING PROGRAM===========================\n\n\n");
@@ -184,20 +182,33 @@ int getFilePath(char* cpPath, char* cpNewPath) {
 		if (cpPath[i] == 10) // \n
 			cpPath[i] = 0;
 	}
+	/*
 	// normalize the path to some extent mainly just changing eveything to the correct slash size and resolving . and ..
 	if (ExpandEnvironmentStringsA(cpPath, cpNewPath, MAX_PATH_SIZE) == 0)
 		return FAILURE;
 	MEMCPY_S(cpPath, MAX_PATH_SIZE, cpNewPath, MAX_PATH_SIZE);
 	memset(cpNewPath, 0, MAX_PATH_SIZE);
+	*/
 
 	if (ParseComplexExpresions(cpPath) == FAILURE)
 		return FAILURE;
+
 
 	getActualPath(cpPath, cpNewPath);
 
 	if (FindAndResolveWildCards(cpNewPath) == FAILURE) {
 		printf_s("attempt to reslve wildcards failed\n");
 		return FAILURE;
+	}
+	char temp[MAX_PATH_SIZE] = { 0 };
+	if (RunCmd(cpNewPath, temp) == FAILURE) {
+		return FAILURE;
+	}
+	if ((strncmp(cpNewPath, temp, MAX_PATH_SIZE) != 0)) {
+		printf_s("eval failed swapping to cmd output\n");
+		memset(cpNewPath, 0, MAX_PATH_SIZE);
+		MEMCPY_S(cpNewPath, MAX_PATH_SIZE, temp, MAX_PATH_SIZE);
+		IS_NULL_TERMINATED(cpNewPath, MAX_PATH_SIZE);
 	}
 
 	printf_s("the path was %s\n", cpNewPath);
@@ -533,13 +544,16 @@ BOOL IsSameHandle(HANDLE hFile2, HANDLE hFileEvil) {
 	BY_HANDLE_FILE_INFORMATION info2 = { 0 };
 	BY_HANDLE_FILE_INFORMATION infoEvil = { 0 };
 
-	BOOL res2 = GetFileInformationByHandle(hFile2, &info2);
 	BOOL resEvil = GetFileInformationByHandle(hFileEvil, &infoEvil);
+	BOOL res2 = GetFileInformationByHandle(hFile2, &info2);
+
+
+
 	
 	if (res2 == 0) {
+		DWORD dwErrorCode = GetLastError();
 		CLOSE_HANDLE(hFile2);
 		CLOSE_HANDLE(hFileEvil);
-		DWORD dwErrorCode = GetLastError();
 		if (dwErrorCode == ERROR_INVALID_FUNCTION)
 			return FALSE;
 		printf_s("error code %d\n", GetLastError());
@@ -922,11 +936,12 @@ BOOL ResolveWildCard(char* cpPath, size_t idx, int* offset, size_t path_len) {
 	}
 	MEMCPY_S(temp, MAX_PATH_SIZE, fdData.cFileName, MAX_PATH);
 	
-
+	/*
 	if (FindNextFileA(next, &fdData) != 0) {
 		printf_s("ambiguous entry aborting\n");
 		return FAILURE;
 	}
+	*/
 
 	if (FindClose(next) == 0) {
 		printf_s("failed while resolving wildcards with error code %d\n", GetLastError());
