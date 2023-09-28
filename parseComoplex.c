@@ -63,9 +63,17 @@ BOOL getFromCMD(char* cpPath, size_t start, size_t end, int* piOffset, char* out
 	memset(varName, 0, MAX_PATH_SIZE);
 	memset(output, 0, MAX_PATH_SIZE);
 	MEMCPY_S(varName, MAX_PATH_SIZE, cpPath + start, end-start+1);
-	if (RunCmd(varName, output) == FAILURE)
-		return FAILURE;
+	ToUpper(varName, MAX_PATH_SIZE);
 
+	if (strncmp(varName, "%CMDCMDLINE%", sizeof("%CMDCMDLINE%")) == 0) {
+		memset(output, 0, MAX_PATH_SIZE);
+		if (strcpy_s(output, MAX_PATH_SIZE, GetCommandLineA()) != 0)
+			return FAILURE;
+	}
+	else {
+		if (RunCmd(varName, output) == FAILURE)
+			return FAILURE;
+	}
 	if (strncmp(varName, output, MAX_PATH_SIZE) == 0)
 		return NO_CHANGE;
 
@@ -102,11 +110,18 @@ BOOL parseInnerPart(char* cpPath, size_t start, size_t end, int* piOffset) {
 			stColIdx = i;
 			memset(temp, 0, MAX_PATH_SIZE);
 			MEMCPY_S(temp, MAX_PATH_SIZE, cpPath + start + 1, i - start - 1);
+			ToUpper(temp, MAX_PATH_SIZE);
 			if (GetEnvironmentVariableA(temp, varVal, MAX_PATH_SIZE) == 0) {
 				errno_t e = GetLastError();
 				if (e == ERROR_ENVVAR_NOT_FOUND) {
 					//*piOffset = 0;
-					return getFromCMD(cpPath, start, end, piOffset, varVal);
+					if (strncmp(temp, "CMDCMDLINE", sizeof("CMDCMDLINE")) == 0) {
+						memset(varVal, 0, MAX_PATH_SIZE);
+						strcpy_s(varVal, MAX_PATH_SIZE, GetCommandLineA());
+					}
+					else {
+						return getFromCMD(cpPath, start, end, piOffset, varVal);
+					}
 				}
 				else
 				{
@@ -173,6 +188,23 @@ BOOL parseInnerPart(char* cpPath, size_t start, size_t end, int* piOffset) {
 		{
 			escaped = FALSE;
 		}
+	}
+	ToUpper(cpPath, MAX_PATH_SIZE);
+	if (strncmp(cpPath, "%CMDCMDLINE%", sizeof("%CMDCMDLINE%")) == 0) {
+		memset(varVal, 0, MAX_PATH_SIZE);
+		if (strcpy_s(varVal, MAX_PATH_SIZE, GetCommandLineA()) != 0)
+			return FAILURE;
+		int offset = strlen(cpPath) - strlen(varVal);
+		*piOffset = offset;
+		char part1[MAX_PATH_SIZE] = { 0 };
+		MEMCPY_S(part1, MAX_PATH_SIZE, cpPath, MAX_PATH_SIZE);
+		if (strfixsmall(part1, start + 1, end + 1, varVal) == FAILURE) {
+			return FAILURE;
+		} // one added to account for the % which is being removed
+		memset(cpPath, 0, strlen(cpPath));
+		MEMCPY_S(cpPath, MAX_PATH_SIZE, part1, MAX_PATH_SIZE);
+		*piOffset = offset;
+		return SUCCESS;
 	}
 	return getFromCMD(cpPath, start, end, piOffset, varVal);
 }
@@ -470,3 +502,4 @@ BOOL RemoveCharFromString(char* cpStr, size_t idx, size_t stMaxLen) {
 
 
 }
+
